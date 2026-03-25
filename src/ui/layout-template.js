@@ -7,7 +7,6 @@ export function createAppShell() {
   return `
     <main class="playground-shell" aria-label="Virtual DOM Diff Playground">
       <header class="playground-hero">
-        <p class="playground-kicker">Role 3 · Playground UI</p>
         <h1>Virtual DOM Diff Playground</h1>
         <p class="playground-description">
           테스트 영역에서 마크업을 수정한 뒤 Patch를 눌러 실제 영역에 변경분만 반영하는 흐름을 검증합니다.
@@ -36,7 +35,6 @@ export function createAppShell() {
           <div class="surface-card__header">
             <p class="surface-card__eyebrow">Test Surface</p>
             <h2>테스트 영역</h2>
-            <p class="surface-card__hint">자유롭게 내용을 수정하고 Patch 흐름을 확인하세요.</p>
           </div>
           <div
             class="surface-card__body surface-card__body--editable"

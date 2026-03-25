@@ -3,6 +3,60 @@
  * Editable only by the Role 3 branch.
  */
 
+const URL_ATTRS = new Set(["href", "src", "xlink:href", "formaction"]);
+
+function isEditableTextInput(element) {
+  return element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement;
+}
+
+function isUnsafeAttribute(name, value) {
+  if (!name) {
+    return false;
+  }
+
+  const normalizedName = String(name).toLowerCase();
+  const normalizedValue = String(value ?? "").trim().toLowerCase();
+
+  if (normalizedName.startsWith("on")) {
+    return true;
+  }
+
+  if (URL_ATTRS.has(normalizedName) && normalizedValue.startsWith("javascript:")) {
+    return true;
+  }
+
+  return false;
+}
+
+function sanitizeNodeTree(rootNode) {
+  const walker = document.createTreeWalker(rootNode, NodeFilter.SHOW_ELEMENT);
+  const elements = [];
+
+  while (walker.nextNode()) {
+    elements.push(walker.currentNode);
+  }
+
+  elements.forEach((element) => {
+    if (element.tagName === "SCRIPT") {
+      element.remove();
+      return;
+    }
+
+    Array.from(element.attributes).forEach((attribute) => {
+      if (isUnsafeAttribute(attribute.name, attribute.value)) {
+        element.removeAttribute(attribute.name);
+      }
+    });
+  });
+}
+
+function sanitizeHtml(html) {
+  const template = document.createElement("template");
+  template.innerHTML = String(html ?? "");
+  sanitizeNodeTree(template.content);
+  return template.innerHTML;
+}
+
 export function getUiRefs(rootElement) {
   if (!(rootElement instanceof Element)) {
     throw new Error("getUiRefs(rootElement): rootElement must be a DOM Element");
@@ -31,6 +85,10 @@ export function readTestMarkup(testSurfaceElement) {
     throw new Error("readTestMarkup(testSurfaceElement): testSurfaceElement must be a DOM Element");
   }
 
+  if (isEditableTextInput(testSurfaceElement)) {
+    return testSurfaceElement.value.trim();
+  }
+
   return testSurfaceElement.innerHTML.trim();
 }
 
@@ -39,7 +97,12 @@ export function writeMarkup(targetElement, html) {
     throw new Error("writeMarkup(targetElement, html): targetElement must be a DOM Element");
   }
 
-  targetElement.innerHTML = String(html ?? "");
+  if (isEditableTextInput(targetElement)) {
+    targetElement.value = String(html ?? "");
+    return;
+  }
+
+  targetElement.innerHTML = sanitizeHtml(html);
 }
 
 export function setNavigationState(refs, state) {

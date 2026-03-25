@@ -8,6 +8,46 @@ import { PATCH_TYPES } from "./change-types.js";
 const ELEMENT_NODE = 1;
 const TEXT_NODE = 3;
 
+function syncDomProperty(targetNode, name, value) {
+  if (!(targetNode instanceof Element) || !name) {
+    return;
+  }
+
+  if (name === "value" && "value" in targetNode) {
+    targetNode.value = value ?? "";
+    return;
+  }
+
+  if (name === "checked" && "checked" in targetNode) {
+    targetNode.checked = value !== null && value !== "false";
+    return;
+  }
+
+  if (name === "selected" && "selected" in targetNode) {
+    targetNode.selected = value !== null && value !== "false";
+  }
+}
+
+function clearDomProperty(targetNode, name) {
+  if (!(targetNode instanceof Element) || !name) {
+    return;
+  }
+
+  if (name === "value" && "value" in targetNode) {
+    targetNode.value = "";
+    return;
+  }
+
+  if (name === "checked" && "checked" in targetNode) {
+    targetNode.checked = false;
+    return;
+  }
+
+  if (name === "selected" && "selected" in targetNode) {
+    targetNode.selected = false;
+  }
+}
+
 function createDomNodeFromVNode(node) {
   if (!node) {
     return null;
@@ -27,6 +67,7 @@ function createDomNodeFromVNode(node) {
 
   Object.entries(attributes).forEach(([name, value]) => {
     element.setAttribute(name, value);
+    syncDomProperty(element, name, value);
   });
 
   children.forEach((childNode) => {
@@ -67,7 +108,7 @@ function comparePaths(leftPath, rightPath) {
 }
 
 function patchPriority(patch) {
-  if (patch.type === PATCH_TYPES.REMOVE_CHILD) {
+  if (patch.type === PATCH_TYPES.REMOVE_CHILD || patch.type === PATCH_TYPES.REMOVE_NODE) {
     return 0;
   }
 
@@ -135,6 +176,9 @@ export function applyPatches(rootElement, patches) {
       const parentNode = targetNode.parentNode;
 
       if (!parentNode) {
+        if (targetNode === currentRoot && path.length === 0) {
+          currentRoot = nextNode;
+        }
         return;
       }
 
@@ -144,6 +188,22 @@ export function applyPatches(rootElement, patches) {
         currentRoot = nextNode;
       }
 
+      return;
+    }
+
+    if (type === PATCH_TYPES.REMOVE_NODE) {
+      const targetNode = getNodeAtPath(currentRoot, path);
+
+      if (!targetNode) {
+        return;
+      }
+
+      if (targetNode === currentRoot && path.length === 0) {
+        currentRoot = null;
+        return;
+      }
+
+      targetNode.parentNode?.removeChild(targetNode);
       return;
     }
 
@@ -166,6 +226,7 @@ export function applyPatches(rootElement, patches) {
       }
 
       targetNode.setAttribute(payload.name, payload.value ?? "");
+      syncDomProperty(targetNode, payload.name, payload.value ?? "");
       return;
     }
 
@@ -177,6 +238,7 @@ export function applyPatches(rootElement, patches) {
       }
 
       targetNode.removeAttribute(payload.name);
+      clearDomProperty(targetNode, payload.name);
       return;
     }
 

@@ -1,10 +1,11 @@
-﻿/**
+/**
  * Owner: Role 4 - History / App Controller
  * Editable only by the Role 4 branch.
  */
 
 import { HISTORY_LIMIT, SELECTORS } from "../contracts.js";
 import { domSubtreeToVNode } from "../core/dom-to-vdom.js";
+import { createElementVNode } from "../core/vdom-node.js";
 import { vNodeToHtml } from "../core/vdom-to-html.js";
 import { diffVNodes } from "../diff/diff.js";
 import { applyPatches } from "../diff/patch-dom.js";
@@ -17,7 +18,6 @@ import {
   writeMarkup,
 } from "../ui/editor-surface.js";
 import { SAMPLE_MARKUP } from "../ui/sample-markup.js";
-import { syncBothSurfaces } from "./view-sync.js";
 
 function assertUiRefs(uiRefs) {
   const requiredKeys = [
@@ -40,6 +40,15 @@ function createDetachedWrapper(markup) {
   const wrapper = document.createElement("div");
   wrapper.innerHTML = markup;
   return wrapper;
+}
+
+function createContentRootVNode(rootElement) {
+  const wrapperVNode = domSubtreeToVNode(rootElement);
+  return createElementVNode("div", {}, wrapperVNode.children ?? []);
+}
+
+function contentVNodeToMarkup(vNode) {
+  return (vNode?.children ?? []).map((child) => vNodeToHtml(child)).join("");
 }
 
 function createHistoryState(history) {
@@ -67,38 +76,44 @@ export function bootstrapApp() {
     assertUiRefs(uiRefs);
 
     const history = createHistoryManager(HISTORY_LIMIT);
+    let actualSurfaceElement = uiRefs.actualSurface;
 
-    writeMarkup(uiRefs.actualSurface, SAMPLE_MARKUP);
+    writeMarkup(actualSurfaceElement, SAMPLE_MARKUP);
 
-    const initialVNode = domSubtreeToVNode(uiRefs.actualSurface);
+    const initialVNode = createContentRootVNode(actualSurfaceElement);
     history.push(initialVNode);
 
-    syncBothSurfaces(uiRefs, initialVNode, vNodeToHtml);
+    writeMarkup(actualSurfaceElement, contentVNodeToMarkup(initialVNode));
+    writeMarkup(uiRefs.testSurface, contentVNodeToMarkup(initialVNode));
     setNavigationState(uiRefs, createHistoryState(history));
 
     uiRefs.patchButton.addEventListener("click", () => {
       const testMarkup = readTestMarkup(uiRefs.testSurface);
 
-      if (typeof testMarkup !== "string" || testMarkup.trim() === "") {
+      if (typeof testMarkup !== "string") {
         setNavigationState(uiRefs, createHistoryState(history));
         return;
       }
 
       const wrapper = createDetachedWrapper(testMarkup);
       const previousVNode = history.current();
-      const nextVNode = domSubtreeToVNode(wrapper);
+      const nextVNode = createContentRootVNode(wrapper);
       const patches = diffVNodes(previousVNode, nextVNode);
 
       if (!Array.isArray(patches)) {
         throw new Error("diffVNodes(previousVNode, nextVNode) must return an array");
       }
 
-      if (patches.length > 0) {
-        applyPatches(uiRefs.actualSurface, patches);
+      if (patches.length === 0) {
+        writeMarkup(uiRefs.testSurface, contentVNodeToMarkup(previousVNode));
+        setNavigationState(uiRefs, createHistoryState(history));
+        return;
       }
 
+      actualSurfaceElement = applyPatches(actualSurfaceElement, patches) ?? actualSurfaceElement;
       history.push(nextVNode);
-      syncBothSurfaces(uiRefs, history.current(), vNodeToHtml);
+      writeMarkup(actualSurfaceElement, contentVNodeToMarkup(history.current()));
+      writeMarkup(uiRefs.testSurface, contentVNodeToMarkup(history.current()));
       setNavigationState(uiRefs, createHistoryState(history));
     });
 
@@ -106,7 +121,8 @@ export function bootstrapApp() {
       const previousState = history.undo();
 
       if (previousState) {
-        syncBothSurfaces(uiRefs, previousState, vNodeToHtml);
+        writeMarkup(actualSurfaceElement, contentVNodeToMarkup(previousState));
+        writeMarkup(uiRefs.testSurface, contentVNodeToMarkup(previousState));
       }
 
       setNavigationState(uiRefs, createHistoryState(history));
@@ -116,7 +132,8 @@ export function bootstrapApp() {
       const nextState = history.redo();
 
       if (nextState) {
-        syncBothSurfaces(uiRefs, nextState, vNodeToHtml);
+        writeMarkup(actualSurfaceElement, contentVNodeToMarkup(nextState));
+        writeMarkup(uiRefs.testSurface, contentVNodeToMarkup(nextState));
       }
 
       setNavigationState(uiRefs, createHistoryState(history));

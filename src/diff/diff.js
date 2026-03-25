@@ -20,8 +20,14 @@ export function diffVNodes(previousNode, nextNode, path = []) {
     ];
   }
 
-  if (!previousNode || !nextNode) {
-    return [];
+  if (previousNode && !nextNode) {
+    return [
+      {
+        type: PATCH_TYPES.REMOVE_NODE,
+        path: [...path],
+        payload: {},
+      },
+    ];
   }
 
   if (
@@ -80,9 +86,21 @@ export function diffVNodes(previousNode, nextNode, path = []) {
   const sharedLength = Math.min(previousChildren.length, nextChildren.length);
 
   for (let index = 0; index < sharedLength; index += 1) {
-    patches.push(
-      ...diffVNodes(previousChildren[index], nextChildren[index], [...path, index])
-    );
+    const childPath = [...path, index];
+    const childPatches = diffVNodes(previousChildren[index], nextChildren[index], childPath);
+
+    childPatches.forEach((patch) => {
+      if (patch.type === PATCH_TYPES.REMOVE_NODE) {
+        patches.push({
+          type: PATCH_TYPES.REMOVE_CHILD,
+          path: [...path],
+          payload: { index },
+        });
+        return;
+      }
+
+      patches.push(patch);
+    });
   }
 
   for (let index = previousChildren.length - 1; index >= nextChildren.length; index -= 1) {
