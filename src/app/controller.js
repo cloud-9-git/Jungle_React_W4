@@ -104,10 +104,13 @@ export function bootstrapApp() {
         throw new Error("diffVNodes(previousVNode, nextVNode) must return an array");
       }
 
-      if (patches.length > 0) {
-        actualSurfaceElement = applyPatches(actualSurfaceElement, patches) ?? actualSurfaceElement;
+      if (patches.length === 0) {
+        writeMarkup(uiRefs.testSurface, contentVNodeToMarkup(previousVNode));
+        setNavigationState(uiRefs, createHistoryState(history));
+        return;
       }
 
+      actualSurfaceElement = applyPatches(actualSurfaceElement, patches) ?? actualSurfaceElement;
       history.push(nextVNode);
       writeMarkup(actualSurfaceElement, contentVNodeToMarkup(history.current()));
       writeMarkup(uiRefs.testSurface, contentVNodeToMarkup(history.current()));

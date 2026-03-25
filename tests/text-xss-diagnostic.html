@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html><body><pre id="r"></pre><script type="module">
+import { readTestMarkup, writeMarkup } from "../src/ui/editor-surface.js";
+const r=document.querySelector('#r');
+const ta=document.createElement('textarea');
+ta.value='   <section>a</section>';
+const read=readTestMarkup(ta);
+const div=document.createElement('div');
+writeMarkup(div,'<svg><a xlink:href="javascript:alert(1)">go</a></svg>');
+r.textContent = 'read=' + JSON.stringify(read) + '\nsanitized=' + div.innerHTML;
+</script></body></html>

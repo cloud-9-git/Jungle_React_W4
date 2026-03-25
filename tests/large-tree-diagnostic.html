@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html><body><pre id="results">diag</pre><script type="module">
+import { bootstrapApp } from "../src/app/controller.js";
+import { domSubtreeToVNode } from "../src/core/dom-to-vdom.js";
+import { vNodeToHtml } from "../src/core/vdom-to-html.js";
+const out = document.querySelector('#results');
+function wrap(markup){ const d=document.createElement('div'); d.innerHTML=markup; return d; }
+function contentMarkup(markup){ const vnode = domSubtreeToVNode(wrap(markup)); return (vnode.children||[]).map((c)=>vNodeToHtml(c)).join(''); }
+const host=document.createElement('div'); host.id='app'; document.body.appendChild(host); bootstrapApp();
+const actual=host.querySelector('[data-surface="actual"]'); const test=host.querySelector('[data-surface="test"]'); const patch=host.querySelector('[data-action="patch"]');
+let inner=''; for (let j=0;j<20;j+=1){ inner += `<div data-i="${j}"><span>node-${j}</span></div>`; }
+const markup=`<section>${inner}</section>`; test.value=markup; patch.click();
+out.textContent = 'actual=' + actual.innerHTML + '\nexpected=' + contentMarkup(markup) + '\nstatus=' + host.querySelector('[data-status="history"]').textContent;
+</script></body></html>
