@@ -58,10 +58,10 @@ flowchart LR
 
 | 역할 | 담당 영역 | 대표 파일 | 협업 경계 |
 | --- | --- | --- | --- |
-| 역할 1 | `Virtual DOM Core` | `src/core/vdom-node.js`, `src/core/dom-to-vdom.js`, `src/core/vdom-to-html.js` | DOM을 VNode로 바꾸고 다시 HTML로 직렬화 |
-| 역할 2 | `Diff / Patch Engine` | `src/diff/diff.js`, `src/diff/patch-dom.js` | 이전/다음 VNode 차이 계산, 실제 DOM 부분 반영 |
-| 역할 3 | `Playground UI` | `src/ui/layout-template.js`, `src/ui/editor-surface.js`, `src/styles/ui.css` | 실제 영역, 테스트 영역, 버튼 UI, 편집 보조 |
-| 역할 4 | `History / App Controller` | `src/state/history-manager.js`, `src/app/controller.js`, `src/app/view-sync.js` | 앱 초기화, 이벤트 연결, 상태 이동, 화면 동기화 |
+| 구름 | `Virtual DOM Core` | `src/core/vdom-node.js`, `src/core/dom-to-vdom.js`, `src/core/vdom-to-html.js` | DOM을 VNode로 바꾸고 다시 HTML로 직렬화 |
+| 이정현 | `Diff / Patch Engine` | `src/diff/diff.js`, `src/diff/patch-dom.js` | 이전/다음 VNode 차이 계산, 실제 DOM 부분 반영 |
+| 이규정 | `Playground UI` | `src/ui/layout-template.js`, `src/ui/editor-surface.js`, `src/styles/ui.css` | 실제 영역, 테스트 영역, 버튼 UI, 편집 보조 |
+| 송채강 | `History / App Controller` | `src/state/history-manager.js`, `src/app/controller.js`, `src/app/view-sync.js` | 앱 초기화, 이벤트 연결, 상태 이동, 화면 동기화 |
 
 ### 역할 분배의 핵심
 
