@@ -1,0 +1,45 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node (혹시라도 npm 쓰면)
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.*
+
+# Build / dist (번들링 안 하면 없어도 됨)
+dist/
+build/
+
+# Coverage (테스트 도구 쓸 경우)
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Mac
+.AppleDouble
+.LSOverride
+
+# Windows
+ehthumbs.db
