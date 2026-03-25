@@ -7,18 +7,17 @@ export function createAppShell() {
   return `
     <main class="playground-shell" aria-label="Virtual DOM Diff Playground">
       <header class="playground-hero">
-        <p class="playground-kicker">Role 3 · Playground UI</p>
         <h1>Virtual DOM Diff Playground</h1>
         <p class="playground-description">
-          ?�스???�역?�서 마크?�을 ?�정????Patch�??�러 ?�제 ?�역??변경분�?반영?�는 ?�름??검증합?�다.
+          테스트 영역에서 마크업을 수정한 뒤 Patch를 눌러 실제 영역에 변경분만 반영하는 흐름을 검증합니다.
         </p>
       </header>
 
       <section class="playground-controls" aria-label="Playground controls">
         <div class="playground-actions">
           <button type="button" class="action-button action-button--primary" data-action="patch">Patch</button>
-          <button type="button" class="action-button" data-action="undo">?�로가�?/button>
-          <button type="button" class="action-button" data-action="redo">?�으로�?�?/button>
+          <button type="button" class="action-button" data-action="undo">뒤로가기</button>
+          <button type="button" class="action-button" data-action="redo">앞으로가기</button>
         </div>
         <output class="history-status" data-status="history" aria-live="polite">1 / 1</output>
       </section>
@@ -27,7 +26,7 @@ export function createAppShell() {
         <article class="surface-card surface-card--actual">
           <div class="surface-card__header">
             <p class="surface-card__eyebrow">Actual Surface</p>
-            <h2>?�제 ?�역</h2>
+            <h2>실제 영역</h2>
           </div>
           <div class="surface-card__body" data-surface="actual"></div>
         </article>
@@ -35,14 +34,14 @@ export function createAppShell() {
         <article class="surface-card surface-card--test">
           <div class="surface-card__header">
             <p class="surface-card__eyebrow">Test Surface</p>
-            <h2>?�스???�역</h2>
-            <p class="surface-card__hint">?�유�?�� ?�용???�정?�고 Patch ?�름???�인?�세??</p>
+            <h2>테스트 영역</h2>
           </div>
-          <textarea
+          <div
             class="surface-card__body surface-card__body--editable"
             data-surface="test"
+            contenteditable="true"
             spellcheck="false"
-          ></textarea>
+          ></div>
         </article>
       </section>
     </main>
