@@ -35,10 +35,59 @@
 ### 사용 흐름
 
 1. 사용자가 `Test Surface`에서 마크업을 수정합니다.
-2. `Patch` 버튼을 누르면 현재 상태와 수정된 상태를 각각 VNode로 만듭니다.
-3. `diffVNodes()`가 두 VNode의 차이를 계산합니다.
-4. `applyPatches()`가 실제 DOM에 필요한 변경만 반영합니다.
-5. 변경 결과는 History에 저장되어 `Undo / Redo`가 가능해집니다.
+2. `Patch` 버튼을 누르면 `readTestMarkup()`이 테스트 영역의 HTML 문자열을 읽어옵니다.
+3. 읽어온 문자열은 `createDetachedWrapper()`를 통해 임시 `div` DOM으로 바뀝니다.
+4. 현재 화면 상태는 `history.current()`로 가져오고, 새로 수정한 상태는 `createContentRootVNode()`로 VNode로 변환합니다.
+5. `diffVNodes(previousVNode, nextVNode)`가 두 상태를 비교해서 patch 목록을 만듭니다.
+6. `applyPatches()`가 patch 목록을 실제 영역 DOM에 반영합니다.
+7. 마지막으로 `history.push(nextVNode)`로 새 상태를 저장하고, 두 화면을 다시 맞춰 `Undo / Redo`가 가능해집니다.
+
+### 코드로 보면 더 쉽게
+
+실제 핵심 코드는 `src/app/controller.js`의 `Patch` 버튼 이벤트 안에 들어 있습니다.  
+중요한 점은 "문자열을 바로 실제 DOM에 덮어쓰지 않는다"는 것입니다. 먼저 비교 가능한 VNode로 바꾼 뒤, 차이만 계산해서 반영합니다.
+
+```js
+uiRefs.patchButton.addEventListener("click", () => {
+  const testMarkup = readTestMarkup(uiRefs.testSurface);
+  const wrapper = createDetachedWrapper(testMarkup);
+
+  const previousVNode = history.current();
+  const nextVNode = createContentRootVNode(wrapper);
+  const patches = diffVNodes(previousVNode, nextVNode);
+
+  actualSurfaceElement = applyPatches(actualSurfaceElement, patches) ?? actualSurfaceElement;
+  history.push(nextVNode);
+
+  writeMarkup(actualSurfaceElement, contentVNodeToMarkup(history.current()));
+  writeMarkup(uiRefs.testSurface, contentVNodeToMarkup(history.current()));
+  setNavigationState(uiRefs, createHistoryState(history));
+});
+```
+
+이 코드를 한 줄씩 말로 풀면 아래와 같습니다.
+
+| 코드 요소 | 쉬운 설명 |
+| --- | --- |
+| `readTestMarkup()` | 사용자가 수정한 HTML을 문자열로 읽습니다. |
+| `createDetachedWrapper()` | 읽은 문자열을 비교 가능한 임시 DOM으로 바꿉니다. |
+| `history.current()` | 지금 화면에 보이는 이전 상태를 가져옵니다. |
+| `createContentRootVNode()` | 새 DOM을 VNode 트리로 바꿉니다. |
+| `diffVNodes()` | 이전 상태와 새 상태를 비교해 "어디가 어떻게 바뀌었는지" 계산합니다. |
+| `applyPatches()` | 계산된 변경만 실제 DOM에 반영합니다. |
+| `history.push()` | 반영이 끝난 새 상태를 저장합니다. |
+| `writeMarkup()` | 실제 영역과 테스트 영역을 같은 최신 상태로 다시 맞춥니다. |
+
+즉, 코드 흐름은 아래 한 문장으로 정리할 수 있습니다.
+
+`수정한 HTML 읽기 -> 임시 DOM 만들기 -> VNode 변환 -> diff 계산 -> patch 적용 -> history 저장 -> 화면 동기화`
+
+### Undo / Redo는 어떻게 동작하는가
+
+- `undo()`는 History에서 한 단계 이전 snapshot을 가져옵니다.
+- `redo()`는 다시 다음 snapshot으로 이동합니다.
+- 가져온 snapshot은 `writeMarkup()`으로 실제 영역과 테스트 영역에 다시 렌더링됩니다.
+- 즉, Undo / Redo도 DOM을 직접 조작하는 기능이 아니라, 저장해 둔 상태를 다시 보여주는 방식입니다.
 
 ```mermaid
 flowchart LR
