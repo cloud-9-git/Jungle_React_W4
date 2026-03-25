@@ -3,7 +3,103 @@
  * Editable only by the Role 2 branch.
  */
 
-export function diffVNodes(previousNode, nextNode, path = []) {
-  throw new Error("Role 2 TODO: implement diffVNodes(previousNode, nextNode, path)");
-}
+import { PATCH_TYPES } from "./change-types.js";
 
+export function diffVNodes(previousNode, nextNode, path = []) {
+  if (!previousNode && !nextNode) {
+    return [];
+  }
+
+  if (!previousNode && nextNode) {
+    return [
+      {
+        type: PATCH_TYPES.REPLACE_NODE,
+        path: [...path],
+        payload: { node: nextNode },
+      },
+    ];
+  }
+
+  if (!previousNode || !nextNode) {
+    return [];
+  }
+
+  if (
+    previousNode.type !== nextNode.type ||
+    (previousNode.type === "element" && previousNode.tagName !== nextNode.tagName)
+  ) {
+    return [
+      {
+        type: PATCH_TYPES.REPLACE_NODE,
+        path: [...path],
+        payload: { node: nextNode },
+      },
+    ];
+  }
+
+  if (previousNode.type === "text" && nextNode.type === "text") {
+    if (previousNode.textContent === nextNode.textContent) {
+      return [];
+    }
+
+    return [
+      {
+        type: PATCH_TYPES.UPDATE_TEXT,
+        path: [...path],
+        payload: { textContent: nextNode.textContent ?? "" },
+      },
+    ];
+  }
+
+  const patches = [];
+  const previousAttributes = previousNode.attributes ?? {};
+  const nextAttributes = nextNode.attributes ?? {};
+
+  Object.entries(nextAttributes).forEach(([name, value]) => {
+    if (previousAttributes[name] !== value) {
+      patches.push({
+        type: PATCH_TYPES.SET_ATTRIBUTE,
+        path: [...path],
+        payload: { name, value },
+      });
+    }
+  });
+
+  Object.keys(previousAttributes).forEach((name) => {
+    if (!(name in nextAttributes)) {
+      patches.push({
+        type: PATCH_TYPES.REMOVE_ATTRIBUTE,
+        path: [...path],
+        payload: { name },
+      });
+    }
+  });
+
+  const previousChildren = previousNode.children ?? [];
+  const nextChildren = nextNode.children ?? [];
+  const sharedLength = Math.min(previousChildren.length, nextChildren.length);
+
+  for (let index = 0; index < sharedLength; index += 1) {
+    patches.push(
+      ...diffVNodes(previousChildren[index], nextChildren[index], [...path, index])
+    );
+  }
+
+  for (let index = previousChildren.length - 1; index >= nextChildren.length; index -= 1) {
+    patches.push({
+      type: PATCH_TYPES.REMOVE_CHILD,
+      path: [...path],
+      payload: { index },
+    });
+  }
+
+  for (let index = previousChildren.length; index < nextChildren.length; index += 1) {
+    patches.push({
+      type: PATCH_TYPES.INSERT_CHILD,
+      path: [...path],
+      payload: { index, node: nextChildren[index] },
+    });
+  }
+
+  return patches;
+}
