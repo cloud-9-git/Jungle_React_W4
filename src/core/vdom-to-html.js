@@ -19,6 +19,7 @@ const VOID_ELEMENTS = new Set([
   "track",
   "wbr",
 ]);
+const BOOLEAN_ATTRIBUTES = new Set(["checked", "selected", "disabled", "readonly", "multiple"]);
 
 function escapeHtml(value) {
   return String(value)
@@ -31,6 +32,20 @@ function escapeAttribute(value) {
   return escapeHtml(value).replaceAll('"', "&quot;");
 }
 
+function serializeAttributes(tagName, attributes) {
+  return Object.entries(attributes ?? {})
+    .filter(([key]) => !(tagName === "textarea" && key === "value"))
+    .filter(([key]) => !(tagName === "select" && key === "value"))
+    .map(([key, value]) => {
+      if (BOOLEAN_ATTRIBUTES.has(key)) {
+        return value === false || value == null ? "" : ` ${key}=""`;
+      }
+
+      return ` ${key}="${escapeAttribute(value)}"`;
+    })
+    .join("");
+}
+
 export function vNodeToHtml(node) {
   if (!node) {
     return "";
@@ -41,12 +56,15 @@ export function vNodeToHtml(node) {
   }
 
   const tagName = String(node.tagName ?? "").toLowerCase();
-  const attributes = Object.entries(node.attributes ?? {})
-    .map(([key, value]) => ` ${key}="${escapeAttribute(value)}"`)
-    .join("");
+  const attributes = serializeAttributes(tagName, node.attributes ?? {});
 
   if (VOID_ELEMENTS.has(tagName)) {
     return `<${tagName}${attributes}>`;
+  }
+
+  if (tagName === "textarea") {
+    const textValue = node.attributes?.value ?? "";
+    return `<${tagName}${attributes}>${escapeHtml(textValue)}</${tagName}>`;
   }
 
   const childrenHtml = (node.children ?? []).map((child) => vNodeToHtml(child)).join("");
